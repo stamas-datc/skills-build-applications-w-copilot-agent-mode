@@ -1,10 +1,16 @@
 import { Activity, Team, User, Workout } from '../models/index.js';
 import { Types } from 'mongoose';
 
+// Retrieve all recorded activities from the database.
 export async function listActivities() {
   return Activity.find().lean();
 }
 
+// Create a new activity with validation and computed fields.
+// Validates required fields (userId, teamId, type, minutes), checks ObjectId validity,
+// verifies referenced user and team documents exist, then calculates points
+// (minutes × 1.5) and sets occurredAt to current timestamp.
+// Returns 400 for validation failures, never 500 from cast errors.
 export async function createActivity(input: unknown) {
   const data = input as any;
   
@@ -38,10 +44,14 @@ export async function createActivity(input: unknown) {
   return activity.toObject();
 }
 
+// Retrieve all teams from the database.
 export async function listTeams() {
   return Team.find().lean();
 }
 
+// Create a new team with validation.
+// Requires name field; mascot and members are optional.
+// Returns 400 if name is missing, never 500 from validation errors.
 export async function createTeam(input: unknown) {
   const data = input as any;
 
@@ -58,6 +68,9 @@ export async function createTeam(input: unknown) {
   return team.toObject();
 }
 
+// Aggregate activities by team to build leaderboard with points ranking.
+// Uses MongoDB pipeline to group activities by team, sum points, lookup team names,
+// sort by points descending, and project final leaderboard with 1-based rank.
 export async function getLeaderboard() {
   const results = await Activity.aggregate([
     {
@@ -95,6 +108,11 @@ export async function getLeaderboard() {
   }));
 }
 
+// Suggest personalized workouts based on user activity patterns.
+// Finds user by email (returns 404 if not found), analyzes recent 10 activities
+// to determine preferred focus area (run/cycle/walk→endurance, strength→strength),
+// falls back to user's fitnessGoal if no activities, then recommends matching
+// workout with explanation reason.
 export async function suggestWorkouts(userEmail: string) {
   const user = await User.findOne({ email: userEmail });
 

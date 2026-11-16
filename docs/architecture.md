@@ -63,11 +63,18 @@ Seed idempotency verified:
 ### API command: `npm run test:api --prefix octofit-tracker/backend`
 **Status: ✅ 4/4 tests passing**
 
-Expected failures (now fixed):
-- Activity endpoints returned 501: implemented validation in `createActivity()` that checks required fields, validates ObjectIds, and verifies user/team existence; returns 400 for invalid input
-- Team endpoints returned 501: implemented validation in `createTeam()` that checks required `name` field; returns 400 if missing
-- Leaderboard returned empty array: implemented MongoDB aggregation pipeline that groups by team, sums points, joins team names, sorts descending, and assigns ranks
-- Workout suggestions returned wrong focus: implemented analysis of recent activities with type-to-focus mapping (run/cycle/walk→endurance, strength→strength) and reason explanation
+Validation strategy:
+- **Activity creation**: Validates required fields (userId, teamId, type, minutes), checks ObjectId validity, verifies user/team exist in database (returns 400 for all validation failures, never 500)
+- **Points calculation**: Formula `points = Math.round(minutes × 1.5)` applied server-side during creation
+- **Timestamp**: `occurredAt` automatically set to current date at creation time
+- **Team creation**: Validates required `name` field (returns 400 if missing); accepts optional `mascot` and `members` array
+- **Leaderboard aggregation**: MongoDB pipeline groups activities by team, sums points, looks up team names via $lookup, sorts descending, assigns 1-based rank
+- **Workout suggestions**: Email-based user lookup (404 if not found); analyzes recent 10 activities sorted by date descending; determines focus area by activity type frequency (run/cycle/walk→endurance, strength→strength); falls back to user's fitnessGoal; returns matching workout with explanation reason
+
+Error handling approach:
+- All validation errors throw with explicit 400 or 404 status codes
+- Express middleware catches errors and uses status codes from error objects
+- Deliberate 4xx prevents 500 errors from input validation or type coercion failures
 
 ### Frontend command: `npm test --prefix octofit-tracker/frontend`
 **Status: ✅ 15/15 tests passing**
