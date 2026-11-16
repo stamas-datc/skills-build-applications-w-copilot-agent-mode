@@ -2,6 +2,9 @@ import { connectDatabase, disconnectDatabase } from '../config/database.js';
 import { Activity, Team, User, Workout } from '../models/index.js';
 
 // Seed stable demo records without clearing data owned by the application.
+// Uses upsert operations with stable fixture keys (email, name) to ensure idempotent re-seeding.
+// Reconciles user team assignments and manages member roster changes without duplication or data loss.
+
 async function upsertDemoUser(name: string, email: string, teamId: InstanceType<typeof Team>['_id'], fitnessGoal: string) {
   const previousUser = await User.findOne({ email }).select('_id team');
   if (previousUser?.team && previousUser.team.toString() !== teamId.toString()) {

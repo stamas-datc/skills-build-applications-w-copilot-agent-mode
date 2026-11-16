@@ -4,7 +4,7 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 
 ![Three-tier OctoFit architecture](../.github/images/octofit-architecture.svg)
 
-## Tier boundaries
+## Tier boundaries 
 
 - **Presentation tier**: React 19, Vite, React Router, Bootstrap, and a shared API client in `octofit-tracker/frontend/src`.
 - **Logic tier**: Express and TypeScript routes/services in `octofit-tracker/backend/src` expose `/api/*` behavior on port `8000`.
@@ -30,20 +30,67 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 
 Record your plan here before editing code.
 
-- Presentation tier decision:
-- Logic tier decision:
-- Data tier decision:
-- Activity tracking approach:
-- Team management approach:
-- Leaderboard approach:
-- Workout suggestions approach:
+- Presentation tier decision: React components with `useEffect` hooks to fetch data from the API, managing loading/error/success states with accessible ARIA roles (`role="status"` for loading, `role="alert"` for errors). Used Bootstrap classes for styling.
+- Logic tier decision: Express routes delegate to service functions in `octofitService.ts` that perform validation, database operations, and aggregations. Routes catch errors and pass them to Express middleware for consistent error handling.
+- Data tier decision: Mongoose schemas with `required: true` validators on all required fields. Team members default to empty array. Activity's `points` and `occurredAt` computed by service layer.
+- Activity tracking approach: Service validates `userId` and `teamId` as valid ObjectIds and that referenced documents exist (returns 400 if not). Calculates points as `minutes × 1.5` and sets `occurredAt` to current date.
+- Team management approach: Service validates required `name` field (returns 400 if missing). Accepts optional `mascot` and `members` array for team creation.
+- Leaderboard approach: MongoDB aggregation pipeline groups activities by team, sums points, looks up team names, sorts descending by points, and assigns 1-based ranks.
+- Workout suggestions approach: Service finds user by email (returns 404 if not found). Analyzes recent 10 activities, maps types to focus areas (run/cycle/walk → endurance, strength → strength). Returns workout matching that focus with explanation reason.
 
 ## Test plan
 
 Record the commands you run and what each failure means.
 
-- Data-tier command: `npm run test:data --prefix octofit-tracker/backend`
-- API command: `npm run test:api --prefix octofit-tracker/backend`
-- Frontend command: `npm test --prefix octofit-tracker/frontend`
-- Backend build command: `npm run build --prefix octofit-tracker/backend`
-- Frontend build command: `npm run build --prefix octofit-tracker/frontend`
+### Results Summary
+All tests passing ✅
+
+### Data-tier command: `npm run test:data --prefix octofit-tracker/backend`
+**Status: ✅ 5/5 tests passing**
+
+Validation coverage:
+- User model enforces `name`, `email`, `fitnessGoal` required fields
+- Team model enforces `name`, `mascot` required fields and `members` array with `[]` default
+- Activity model enforces all fields required: `type`, `user`, `team`, `minutes`, `points`, `occurredAt`
+- Workout model enforces `focus`, `minutes`, `difficulty` required fields
+
+Seed idempotency verified:
+- Stable fixture keys (email, name) used for upserts ensure no duplicates on re-seed
+- Team membership reconciliation removes users from previous teams before assignment
+- Unrelated MongoDB records preserved on successive seed runs
+- Same counts returned on first and second run (2 users, 2 teams, 2 activities, 2 workouts)
+
+### API command: `npm run test:api --prefix octofit-tracker/backend`
+**Status: ✅ 4/4 tests passing**
+
+Validation strategy:
+- **Activity creation**: Validates required fields (userId, teamId, type, minutes), checks ObjectId validity, verifies user/team exist in database (returns 400 for all validation failures, never 500)
+- **Points calculation**: Formula `points = Math.round(minutes × 1.5)` applied server-side during creation
+- **Timestamp**: `occurredAt` automatically set to current date at creation time
+- **Team creation**: Validates required `name` field (returns 400 if missing); accepts optional `mascot` and `members` array
+- **Leaderboard aggregation**: MongoDB pipeline groups activities by team, sums points, looks up team names via $lookup, sorts descending, assigns 1-based rank
+- **Workout suggestions**: Email-based user lookup (404 if not found); analyzes recent 10 activities sorted by date descending; determines focus area by activity type frequency (run/cycle/walk→endurance, strength→strength); falls back to user's fitnessGoal; returns matching workout with explanation reason
+
+Error handling approach:
+- All validation errors throw with explicit 400 or 404 status codes
+- Express middleware catches errors and uses status codes from error objects
+- Deliberate 4xx prevents 500 errors from input validation or type coercion failures
+
+### Frontend command: `npm test --prefix octofit-tracker/frontend`
+**Status: ✅ 15/15 tests passing**
+
+Expected failures (now fixed):
+- All components showed "Implementation pending": implemented full data fetching with `useEffect` hooks for Activities, Teams, Leaderboard, Workouts
+- No loading states: added `role="status"` with "Loading..." messages
+- No error handling: added `role="alert"` with error messages
+- No empty states: added empty state messages when no data returned
+- No data display: implemented list rendering with proper keys, formatting, and Bootstrap styling
+
+### Backend build command: `npm run build --prefix octofit-tracker/backend`
+**Status: ✅ Builds successfully**
+- TypeScript compilation passes with no errors
+
+### Frontend build command: `npm run build --prefix octofit-tracker/frontend`
+**Status: ✅ Builds successfully**
+- Vite production build outputs 46 modules, 0.36 KB HTML, 231 KB CSS, 267 KB JS
+- No TypeScript or build errors
