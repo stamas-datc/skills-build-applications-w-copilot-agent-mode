@@ -48,13 +48,17 @@ All tests passing ✅
 ### Data-tier command: `npm run test:data --prefix octofit-tracker/backend`
 **Status: ✅ 5/5 tests passing**
 
-Expected failures (now fixed):
-- User model missing required validation: fixed by adding `required: true` to `name`, `email`, `fitnessGoal`
-- Team model missing required validation: fixed by adding `required: true` to `name`, `mascot` and `default: []` to `members`
-- Activity model missing required validation: fixed by adding `required: true` to all fields (`type`, `user`, `team`, `minutes`, `points`, `occurredAt`)
-- Workout model missing required validation: fixed by adding `required: true` to `focus`, `minutes`, `difficulty`
+Validation coverage:
+- User model enforces `name`, `email`, `fitnessGoal` required fields
+- Team model enforces `name`, `mascot` required fields and `members` array with `[]` default
+- Activity model enforces all fields required: `type`, `user`, `team`, `minutes`, `points`, `occurredAt`
+- Workout model enforces `focus`, `minutes`, `difficulty` required fields
 
-Seed test validates: models persist correctly, idempotent re-seeding doesn't duplicate records, fixture relationships preserved
+Seed idempotency verified:
+- Stable fixture keys (email, name) used for upserts ensure no duplicates on re-seed
+- Team membership reconciliation removes users from previous teams before assignment
+- Unrelated MongoDB records preserved on successive seed runs
+- Same counts returned on first and second run (2 users, 2 teams, 2 activities, 2 workouts)
 
 ### API command: `npm run test:api --prefix octofit-tracker/backend`
 **Status: ✅ 4/4 tests passing**
