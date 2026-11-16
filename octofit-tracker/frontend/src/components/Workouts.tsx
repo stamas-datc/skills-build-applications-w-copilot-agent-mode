@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getJson } from '../api/client.js';
 
+// WorkoutSuggestion represents a recommended exercise with metadata and explanation.
 interface WorkoutSuggestion {
   _id?: string;
   title: string;
@@ -14,6 +15,10 @@ interface WorkoutsResponse {
   suggestions: WorkoutSuggestion[];
 }
 
+// Workouts component fetches personalized workout suggestions for a user.
+// Analyzes user's recent activity patterns to recommend matching focus area.
+// Displays recommendation reason explaining the suggestion basis.
+// Includes loading, error, and empty states for robust user experience.
 export default function Workouts() {
   const [suggestions, setSuggestions] = useState<WorkoutSuggestion[]>([]);
   const [loading, setLoading] = useState(true);

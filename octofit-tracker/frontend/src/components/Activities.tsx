@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getJson } from '../api/client.js';
 
+// Activity represents a recorded fitness exercise with type, duration, and computed points.
 interface Activity {
   _id: string;
   type: string;
@@ -15,6 +16,8 @@ interface ActivitiesResponse {
   activities: Activity[];
 }
 
+// Activities component fetches and displays all recorded fitness activities.
+// Uses loading/error/empty states for robust UX and accessibility (WCAG role="status" and role="alert").
 export default function Activities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getJson } from '../api/client.js';
 
+// Team represents a group of students competing in fitness activities.
 interface Team {
   _id: string;
   name: string;
@@ -12,6 +13,8 @@ interface TeamsResponse {
   teams: Team[];
 }
 
+// Teams component fetches and displays all teams with their members.
+// Provides loading, error, and empty states for robust user experience.
 export default function Teams() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);

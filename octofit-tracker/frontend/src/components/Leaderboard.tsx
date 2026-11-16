@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getJson } from '../api/client.js';
 
+// LeaderboardEntry represents a team's rank and accumulated points.
 interface LeaderboardEntry {
   teamName: string;
   totalPoints: number;
@@ -11,6 +12,9 @@ interface LeaderboardResponse {
   leaderboard: LeaderboardEntry[];
 }
 
+// Leaderboard component fetches and displays teams ranked by total activity points.
+// Teams are pre-sorted by the API in descending order of points with 1-based ranking.
+// Displays loading, error, and empty states for robust user experience.
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
